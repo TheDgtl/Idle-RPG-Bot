@@ -516,7 +516,7 @@ There's a command to get the invite link ${value}invite`);
       });
   }
 
-  setPlayergold(params) {
+  setPlayerGold(params) {
     const { recipient, amount } = params;
     return this.Database.loadPlayer(recipient, { pastEvents: 0, pastPvpEvents: 0 })
       .then((player) => {

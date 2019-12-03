@@ -313,45 +313,47 @@ class DiscordBot extends BaseHelper {
       const guildConfig = await this.Game.dbClass().loadGame(guild.id);
       const randomWinner = await this.randomBetween(0, guildLotteryPlayers.length - 1);
       const winner = guildLotteryPlayers[randomWinner];
-      const eventMsg = this.setImportantMessage(`Out of ${guildLotteryPlayers.length} contestants, ${winner.name} has won the daily lottery of ${guildConfig.dailyLottery.prizePool} gold!`);
-      const eventLog = `Congratulations! Out of ${guildLotteryPlayers.length} contestants, you just won ${guildConfig.dailyLottery.prizePool} gold from the daily lottery!`;
-      const newPrizePool = await this.randomBetween(1500, 10000);
 
-      if (guild.id === guildID) {
-        const lotteryChannel = await guild.channels.find(channel => channel.id === enumHelper.channels.lottery);
-        if (lotteryChannel) {
-          let lotteryMessages = await lotteryChannel.fetchMessages({ limit: 10 });
-          lotteryMessages = await lotteryMessages.sort((message1, message2) => message1.createdTimestamp - message2.createdTimestamp);
-          if (lotteryMessages.size <= 0) {
-            await lotteryChannel.send(`Idle-RPG Lottery - You must pay 100 gold to enter! PM me \`!lottery\` to join!\nOut of ${guildLotteryPlayers.length} contestants, ${winner.name} has won the previous daily lottery of ${guildConfig.dailyLottery.prizePool} gold!`);
-            await lotteryChannel.send(`Current lottery prize pool: ${newPrizePool}`);
-            await lotteryChannel.send('Contestants:');
-          } else {
-            await lotteryMessages.array()[0].edit(`Idle-RPG Lottery - You must pay 100 gold to enter! PM me \`!lottery\` to join!\nOut of ${guildLotteryPlayers.length} contestants, ${winner.name} has won the previous daily lottery of ${guildConfig.dailyLottery.prizePool} gold!`);
-            await lotteryMessages.array()[1].edit(`Current lottery prize pool: ${newPrizePool}`);
-            await lotteryMessages.array()[2].edit('Contestants:');
-          }
-        }
-      }
       winner.gold.current += guildConfig.dailyLottery.prizePool;
       winner.gold.total += guildConfig.dailyLottery.prizePool;
       winner.gold.dailyLottery += guildConfig.dailyLottery.prizePool;
+      await this.Game.dbClass().savePlayer(winner);
+
+      const prizePool = guildConfig.dailyLottery.prizePool;
+      const newPrizePool = await this.randomBetween(1500, 10000);
+      guildConfig.dailyLottery.prizePool = newPrizePool;
+      await this.Game.dbClass().updateGame(guild.id, guildConfig);
+      await this.Game.dbClass().removeLotteryPlayers(guild.id);
+
+      const eventLog = `Congratulations! Out of ${guildLotteryPlayers.length} contestants, you just won ${prizePool} gold from the daily lottery!`;
+      await this.logEvent(winner, this.Game.dbClass(), eventLog, enumHelper.logTypes.action);
+
+      const eventMsg = this.setImportantMessage(`Out of ${guildLotteryPlayers.length} contestants, ${winner.name} has won the daily lottery of ${prizePool} gold!`);
+      guild.channels.find(channel => channel.name === 'actions' && channel.type === 'text').send(eventMsg);
+
+      const lotteryChannel = await guild.channels.find(channel => channel && channel.name === 'lottery' && channel.type === 'text');
+      if (lotteryChannel) {
+        let lotteryMessages = await lotteryChannel.fetchMessages({ limit: 10 });
+        lotteryMessages = await lotteryMessages.sort((message1, message2) => message1.createdTimestamp - message2.createdTimestamp);
+        if (lotteryMessages.size <= 0) {
+          await lotteryChannel.send(`Idle-RPG Lottery - You must pay 100 gold to enter! PM me \`!lottery\` to join!\nOut of ${guildLotteryPlayers.length} contestants, ${winner.name} has won the previous daily lottery of ${prizePoolprizePool} gold!`);
+          await lotteryChannel.send(`Current lottery prize pool: ${newPrizePool}`);
+          await lotteryChannel.send('Contestants:');
+        } else {
+          await lotteryMessages.array()[0].edit(`Idle-RPG Lottery - You must pay 100 gold to enter! PM me \`!lottery\` to join!\nOut of ${guildLotteryPlayers.length} contestants, ${winner.name} has won the previous daily lottery of ${prizePool} gold!`);
+          await lotteryMessages.array()[1].edit(`Current lottery prize pool: ${newPrizePool}`);
+          await lotteryMessages.array()[2].edit('Contestants:');
+        }
+      }
 
       guildLotteryPlayers.forEach((player) => {
         const discordUser = guild.members.find(member => member.id === player.discordId);
         if (player.discordId !== winner.discordId && discordUser) {
-          discordUser.send(`Thank you for participating in the lottery! Unfortunately ${winner.name} has won the prize of ${guildConfig.dailyLottery.prizePool} out of ${guildLotteryPlayers.length} people.`);
+          discordUser.send(`Thank you for participating in the lottery! Unfortunately ${winner.name} has won the prize of ${prizePool} out of ${guildLotteryPlayers.length} people.`);
         } else if (discordUser) {
-          discordUser.send(`Thank you for participating in the lottery! You have won the prize of ${guildConfig.dailyLottery.prizePool} out of ${guildLotteryPlayers.length} people.`);
+          discordUser.send(`Thank you for participating in the lottery! You have won the prize of ${prizePool} out of ${guildLotteryPlayers.length} people.`);
         }
       });
-
-      guildConfig.dailyLottery.prizePool = newPrizePool;
-      guild.channels.find(channel => channel.name === 'actions' && channel.type === 'text').send(eventMsg);
-      await this.Game.dbClass().updateGame(guild.id, guildConfig);
-      await this.logEvent(winner, this.Game.dbClass(), eventLog, enumHelper.logTypes.action);
-      await this.Game.dbClass().savePlayer(winner);
-      await this.Game.dbClass().removeLotteryPlayers(guild.id);
     });
   }
 
