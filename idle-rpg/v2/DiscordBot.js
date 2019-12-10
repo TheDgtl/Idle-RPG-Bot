@@ -336,7 +336,7 @@ class DiscordBot extends BaseHelper {
         let lotteryMessages = await lotteryChannel.fetchMessages({ limit: 10 });
         lotteryMessages = await lotteryMessages.sort((message1, message2) => message1.createdTimestamp - message2.createdTimestamp);
         if (lotteryMessages.size <= 0) {
-          await lotteryChannel.send(`Idle-RPG Lottery - You must pay 100 gold to enter! PM me \`!lottery\` to join!\nOut of ${guildLotteryPlayers.length} contestants, ${winner.name} has won the previous daily lottery of ${prizePoolprizePool} gold!`);
+          await lotteryChannel.send(`Idle-RPG Lottery - You must pay 100 gold to enter! PM me \`!lottery\` to join!\nOut of ${guildLotteryPlayers.length} contestants, ${winner.name} has won the previous daily lottery of ${prizePool} gold!`);
           await lotteryChannel.send(`Current lottery prize pool: ${newPrizePool}`);
           await lotteryChannel.send('Contestants:');
         } else {
