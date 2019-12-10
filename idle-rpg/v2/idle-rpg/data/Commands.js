@@ -86,7 +86,7 @@ class Commands extends aggregation(BaseGame, BaseHelper) {
     }
 
     const newPrizePool = 1500;
-    const lotteryChannel = await guild.channels.find(channel => channel.id === enumHelper.channels.lottery);
+    const lotteryChannel = await guild.channels.find(channel => channel && channel.name === 'lottery' && channel.type === 'text');
     if (lotteryChannel) {
       let lotteryMessages = await lotteryChannel.fetchMessages({ limit: 10 });
       lotteryMessages = await lotteryMessages.sort((message1, message2) => message1.createdTimestamp - message2.createdTimestamp);
@@ -154,7 +154,7 @@ class Commands extends aggregation(BaseGame, BaseHelper) {
     guildConfig.dailyLottery.prizePool += 100;
     await this.Database.updateGame(player.guildId, guildConfig);
     await this.Database.savePlayer(player);
-    const lotteryChannel = await Bot.guilds.find(guild => guild.id === player.guildId).channels.find(channel => channel.id === enumHelper.channels.lottery);
+    const lotteryChannel = await Bot.guilds.find(guild => guild.id === player.guildId).channels.find(channel => channel && channel.name === 'lottery' && channel.type === 'text');
     if (lotteryChannel) {
       let lotteryMessages = await lotteryChannel.fetchMessages({ limit: 10 });
       lotteryMessages = await lotteryMessages.sort((message1, message2) => message1.createdTimestamp - message2.createdTimestamp);
@@ -643,7 +643,7 @@ There's a command to get the invite link ${value}invite`);
         prizePool: 1500
       }
     };
-    const lotteryChannel = await guild.channels.find(channel => channel.id === enumHelper.channels.lottery);
+    const lotteryChannel = await guild.channels.find(channel => channel && channel.name === 'lottery' && channel.type === 'text');
     if (lotteryChannel) {
       let lotteryMessages = await lotteryChannel.fetchMessages({ limit: 10 });
       lotteryMessages = await lotteryMessages.sort((message1, message2) => message1.createdTimestamp - message2.createdTimestamp);
